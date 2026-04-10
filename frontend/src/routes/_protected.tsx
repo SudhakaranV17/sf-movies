@@ -1,3 +1,4 @@
+import BaseLayout from "@/layouts/baseLayout";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_protected")({
@@ -7,9 +8,5 @@ export const Route = createFileRoute("/_protected")({
       throw redirect({ to: "/login" });
     }
   },
-  component: RouteComponent,
+  component: BaseLayout,
 });
-
-function RouteComponent() {
-  return <>protected</>;
-}

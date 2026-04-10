@@ -10,17 +10,22 @@
 
 import { Route as rootRouteImport } from './src/routes/__root'
 import { Route as NotFoundRouteImport } from './src/routes/not-found'
+import { Route as DashboardRouteImport } from './src/routes/dashboard'
 import { Route as SessionRouteImport } from './src/routes/_session'
 import { Route as ProtectedRouteImport } from './src/routes/_protected'
 import { Route as IndexRouteImport } from './src/routes/index'
 import { Route as SessionRegisterRouteImport } from './src/routes/_session/register'
 import { Route as SessionLoginRouteImport } from './src/routes/_session/login'
 import { Route as ProtectedFavoritesRouteImport } from './src/routes/_protected/favorites'
-import { Route as ProtectedDashboardRouteImport } from './src/routes/_protected/dashboard'
 
 const NotFoundRoute = NotFoundRouteImport.update({
   id: '/not-found',
   path: '/not-found',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SessionRoute = SessionRouteImport.update({
@@ -51,24 +56,19 @@ const ProtectedFavoritesRoute = ProtectedFavoritesRouteImport.update({
   path: '/favorites',
   getParentRoute: () => ProtectedRoute,
 } as any)
-const ProtectedDashboardRoute = ProtectedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => ProtectedRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
   '/not-found': typeof NotFoundRoute
-  '/dashboard': typeof ProtectedDashboardRoute
   '/favorites': typeof ProtectedFavoritesRoute
   '/login': typeof SessionLoginRoute
   '/register': typeof SessionRegisterRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
   '/not-found': typeof NotFoundRoute
-  '/dashboard': typeof ProtectedDashboardRoute
   '/favorites': typeof ProtectedFavoritesRoute
   '/login': typeof SessionLoginRoute
   '/register': typeof SessionRegisterRoute
@@ -78,8 +78,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_protected': typeof ProtectedRouteWithChildren
   '/_session': typeof SessionRouteWithChildren
+  '/dashboard': typeof DashboardRoute
   '/not-found': typeof NotFoundRoute
-  '/_protected/dashboard': typeof ProtectedDashboardRoute
   '/_protected/favorites': typeof ProtectedFavoritesRoute
   '/_session/login': typeof SessionLoginRoute
   '/_session/register': typeof SessionRegisterRoute
@@ -88,20 +88,20 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/not-found'
     | '/dashboard'
+    | '/not-found'
     | '/favorites'
     | '/login'
     | '/register'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/not-found' | '/dashboard' | '/favorites' | '/login' | '/register'
+  to: '/' | '/dashboard' | '/not-found' | '/favorites' | '/login' | '/register'
   id:
     | '__root__'
     | '/'
     | '/_protected'
     | '/_session'
+    | '/dashboard'
     | '/not-found'
-    | '/_protected/dashboard'
     | '/_protected/favorites'
     | '/_session/login'
     | '/_session/register'
@@ -111,6 +111,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ProtectedRoute: typeof ProtectedRouteWithChildren
   SessionRoute: typeof SessionRouteWithChildren
+  DashboardRoute: typeof DashboardRoute
   NotFoundRoute: typeof NotFoundRoute
 }
 
@@ -121,6 +122,13 @@ declare module '@tanstack/react-router' {
       path: '/not-found'
       fullPath: '/not-found'
       preLoaderRoute: typeof NotFoundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_session': {
@@ -165,23 +173,14 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedFavoritesRouteImport
       parentRoute: typeof ProtectedRoute
     }
-    '/_protected/dashboard': {
-      id: '/_protected/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof ProtectedDashboardRouteImport
-      parentRoute: typeof ProtectedRoute
-    }
   }
 }
 
 interface ProtectedRouteChildren {
-  ProtectedDashboardRoute: typeof ProtectedDashboardRoute
   ProtectedFavoritesRoute: typeof ProtectedFavoritesRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
-  ProtectedDashboardRoute: ProtectedDashboardRoute,
   ProtectedFavoritesRoute: ProtectedFavoritesRoute,
 }
 
@@ -206,6 +205,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ProtectedRoute: ProtectedRouteWithChildren,
   SessionRoute: SessionRouteWithChildren,
+  DashboardRoute: DashboardRoute,
   NotFoundRoute: NotFoundRoute,
 }
 export const routeTree = rootRouteImport
