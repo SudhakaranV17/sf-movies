@@ -1,34 +1,21 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { InputText } from "primereact/inputtext";
-import type { z } from "zod";
-import { LoginSchema } from "../helpers/auth.helper";
 import { useLogin } from "../hooks/auth.hook";
-
-type LoginFormValues = z.infer<typeof LoginSchema>;
 
 export default function LoginForm() {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
-  const { mutate: submitLoginCredentials, isPending: isLoginSubmitting } =
-    useLogin();
-
   const {
     register,
     handleSubmit,
+    handleLogin,
+    isLoggingIn: isLoginSubmitting,
     formState: { errors: loginFieldErrors },
-  } = useForm<LoginFormValues>({
-    resolver: zodResolver(LoginSchema),
-  });
-
-  const onLoginFormSubmit = (formValues: LoginFormValues) => {
-    submitLoginCredentials(formValues);
-  };
+  } = useLogin();
 
   return (
     <form
-      onSubmit={handleSubmit(onLoginFormSubmit)}
+      onSubmit={handleSubmit(handleLogin)}
       className="flex flex-col gap-2"
     >
       {/* Email field */}

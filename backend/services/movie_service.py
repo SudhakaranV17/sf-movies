@@ -97,10 +97,34 @@ async def sync_movies(db: AsyncSession) -> int:
 
 
 # ─── Get all movies ───────────────────────────────────────────────────────────
-async def get_all_movies(db: AsyncSession) -> list[Movie]:
-    logger.info("Fetching all movies from database...")
+async def get_all_movies(
+    db: AsyncSession, 
+    year: str | None = None, 
+    sort: str | None = None
+) -> list[Movie]:
+    logger.info(f"Fetching movies from database (year={year}, sort={sort})")
     try:
-        result = await db.execute(select(Movie))
+        stmt = select(Movie)
+        
+        # Apply year filter
+        if year:
+            if year == "older":
+                stmt = stmt.where(Movie.release_year <= 1979)
+            elif year.endswith("s"):
+                start_year = int(year[:4])
+                stmt = stmt.where(Movie.release_year >= start_year, Movie.release_year < start_year + 10)
+        
+        # Apply sorting
+        if sort == "title_asc":
+            stmt = stmt.order_by(Movie.title.asc())
+        elif sort == "title_desc":
+            stmt = stmt.order_by(Movie.title.desc())
+        elif sort == "year_asc":
+            stmt = stmt.order_by(Movie.release_year.asc())
+        elif sort == "year_desc":
+            stmt = stmt.order_by(Movie.release_year.desc())
+
+        result = await db.execute(stmt)
         movies = result.scalars().all()
         logger.info(f"Successfully fetched {len(movies)} movies.")
         return movies
@@ -110,8 +134,13 @@ async def get_all_movies(db: AsyncSession) -> list[Movie]:
 
 
 # ─── Search movies ────────────────────────────────────────────────────────────
-async def search_movies(query: str, db: AsyncSession) -> list[Movie]:
-    logger.info(f"Searching movies with query: '{query}'")
+async def search_movies(
+    query: str, 
+    db: AsyncSession,
+    year: str | None = None,
+    sort: str | None = None
+) -> list[Movie]:
+    logger.info(f"Searching movies with query: '{query}' (year={year}, sort={sort})")
     try:
         filters = [
             Movie.title.ilike(f"%{query}%"),
@@ -125,7 +154,27 @@ async def search_movies(query: str, db: AsyncSession) -> list[Movie]:
         if query.isdigit():
             filters.append(Movie.release_year == int(query))
 
-        result = await db.execute(select(Movie).where(or_(*filters)))
+        stmt = select(Movie).where(or_(*filters))
+
+        # Apply year filter
+        if year:
+            if year == "older":
+                stmt = stmt.where(Movie.release_year <= 1979)
+            elif year.endswith("s"):
+                start_year = int(year[:4])
+                stmt = stmt.where(Movie.release_year >= start_year, Movie.release_year < start_year + 10)
+
+        # Apply sorting
+        if sort == "title_asc":
+            stmt = stmt.order_by(Movie.title.asc())
+        elif sort == "title_desc":
+            stmt = stmt.order_by(Movie.title.desc())
+        elif sort == "year_asc":
+            stmt = stmt.order_by(Movie.release_year.asc())
+        elif sort == "year_desc":
+            stmt = stmt.order_by(Movie.release_year.desc())
+
+        result = await db.execute(stmt)
         movies = result.scalars().all()
         logger.info(f"Search for '{query}' returned {len(movies)} results.")
         return movies

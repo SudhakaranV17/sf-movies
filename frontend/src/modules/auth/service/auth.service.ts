@@ -5,23 +5,35 @@ import type {
   RegisterCredentials,
   AuthResponse,
 } from "../types/auth.type";
+import { useMutation } from "@tanstack/react-query";
+import { endpoints } from "@/config/constants";
 
-export const authService = {
-  login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
+export const useLoginMutation = () => {
+  const postData = async (credentials: LoginCredentials) => {
     const response = await apiClient.post(
-      "/auth/login",
+      endpoints.AUTH_LOGIN,
       AuthResponseSchema,
       credentials,
     );
     return response as AuthResponse;
-  },
+  };
 
-  register: async (credentials: RegisterCredentials): Promise<AuthResponse> => {
+  return useMutation({
+    mutationFn: postData,
+  });
+};
+
+export const useRegisterMutation = () => {
+  const postData = async (credentials: RegisterCredentials) => {
     const response = await apiClient.post(
-      "/auth/register",
+      endpoints.AUTH_REGISTER,
       AuthResponseSchema,
       credentials,
     );
     return response as AuthResponse;
-  },
+  };
+
+  return useMutation({
+    mutationFn: postData,
+  });
 };

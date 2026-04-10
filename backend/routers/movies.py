@@ -10,11 +10,20 @@ router = APIRouter(prefix="/movies", tags=["Movies"])
 
 # ─── Get all movies ───────────────────────────────────────────────────────────
 @router.get("", response_model=list[MovieResponse])
-async def list_movies(db: AsyncSession = Depends(get_db)):
-    return await get_all_movies(db)
+async def list_movies(
+    year: str | None = Query(None),
+    sort: str | None = Query(None),
+    db: AsyncSession = Depends(get_db)
+):
+    return await get_all_movies(db, year, sort)
 
 
 # ─── Search movies ────────────────────────────────────────────────────────────
 @router.get("/search", response_model=list[MovieResponse])
-async def search(q: str = Query(..., min_length=1), db: AsyncSession = Depends(get_db)):
-    return await search_movies(q, db)
+async def search(
+    q: str = Query(..., min_length=1),
+    year: str | None = Query(None),
+    sort: str | None = Query(None),
+    db: AsyncSession = Depends(get_db)
+):
+    return await search_movies(q, db, year, sort)
