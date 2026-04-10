@@ -1,6 +1,6 @@
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select, func, or_
 from dotenv import load_dotenv
 import os
 
@@ -88,9 +88,19 @@ async def get_all_movies(db: AsyncSession) -> list[Movie]:
     return result.scalars().all()
 
 
-# ─── Search movies by title ───────────────────────────────────────────────────
+# ─── Search movies ────────────────────────────────────────────────────────────
 async def search_movies(query: str, db: AsyncSession) -> list[Movie]:
-    result = await db.execute(
-        select(Movie).where(Movie.title.ilike(f"%{query}%"))
-    )
+    filters = [
+        Movie.title.ilike(f"%{query}%"),
+        Movie.locations.ilike(f"%{query}%"),
+        Movie.director.ilike(f"%{query}%"),
+        Movie.actor_1.ilike(f"%{query}%"),
+        Movie.actor_2.ilike(f"%{query}%"),
+        Movie.actor_3.ilike(f"%{query}%"),
+    ]
+
+    if query.isdigit():
+        filters.append(Movie.release_year == int(query))
+
+    result = await db.execute(select(Movie).where(or_(*filters)))
     return result.scalars().all()
