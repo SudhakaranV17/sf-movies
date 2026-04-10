@@ -1,10 +1,29 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useAuthStore } from "@/shared/store/useAuthStore";
+import { confirmDialog, ConfirmDialog } from "primereact/confirmdialog";
 
 interface HeaderProps {
   onMenuToggle: () => void;
 }
 
 export default function Header({ onMenuToggle }: HeaderProps) {
+  const { isAuthenticated, logout } = useAuthStore();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    confirmDialog({
+      message: "Are you sure you want to sign out?",
+      header: "Confirm Logout",
+      icon: "pi pi-exclamation-triangle pr-2",
+      acceptClassName: "p-button-danger",
+      draggable: false,
+      accept: () => {
+        logout();
+        navigate({ to: "/dashboard" });
+      },
+    });
+  };
+
   return (
     <nav className="flex justify-between items-center bg-bg-raised px-3.5 py-[9px] border-border-strong border-b shrink-0">
       {/* Left: hamburger (mobile) + logo */}
@@ -38,14 +57,25 @@ export default function Header({ onMenuToggle }: HeaderProps) {
           Favorites
         </Link>
 
-        <Link
-          to="/login"
-          className="flex items-center gap-1.5 bg-accent hover:opacity-90 px-3 py-1.5 border-none rounded-[6px] font-medium text-bg-page text-xs transition-opacity cursor-pointer"
-        >
-          <i className="text-[11px] pi pi-sign-in" />
-          Login
-        </Link>
+        {isAuthenticated ? (
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1.5 bg-danger-dim/10 hover:bg-danger-dim/20 px-3 py-1.5 border border-danger/30 rounded-[6px] font-medium text-danger text-xs transition-colors cursor-pointer"
+          >
+            <i className="text-[11px] pi pi-sign-out" />
+            Logout
+          </button>
+        ) : (
+          <Link
+            to="/login"
+            className="flex items-center gap-1.5 bg-accent hover:opacity-90 px-3 py-1.5 border-none rounded-[6px] font-medium text-[white] text-bg-page text-xs no-underline transition-opacity cursor-pointer"
+          >
+            <i className="text-[11px] pi pi-sign-in" />
+            Login
+          </Link>
+        )}
       </div>
+      <ConfirmDialog />
     </nav>
   );
 }

@@ -22,7 +22,7 @@ class ApiClient {
     if (!ApiClient.instance) {
       ApiClient.instance = new ApiClient(
         axios.create({
-          baseURL: `${import.meta.env.VITE_BASE_URL || "http://localhost:8000"}/api`,
+          baseURL: "/api",
           withCredentials: true,
           headers: {
             "Content-Type": "application/json",

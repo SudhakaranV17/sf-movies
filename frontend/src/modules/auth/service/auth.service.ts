@@ -1,4 +1,3 @@
-// modules/auth/service/auth.service.ts
 import apiClient from "@/shared/service/apiClient";
 import { AuthResponseSchema } from "../helpers/auth.helper";
 import type {

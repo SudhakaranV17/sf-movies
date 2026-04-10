@@ -15,12 +15,13 @@ export const useLogin = () => {
     mutationFn: (credentials: LoginCredentials) =>
       authService.login(credentials),
     onSuccess: (data) => {
-      setAuth(data.user, data.token);
+      setAuth(data.user, data.access_token);
       toast.success("Login successfully!");
-      navigate({ to: "/" });
+      navigate({ to: "/dashboard" });
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Login failed");
+      const errorMessage = error.response?.data?.detail || "Login failed";
+      toast.error(errorMessage);
     },
   });
 };
@@ -35,12 +36,13 @@ export const useRegister = () => {
     mutationFn: (credentials: RegisterCredentials) =>
       authService.register(credentials),
     onSuccess: (data) => {
-      setAuth(data.user, data.token);
+      setAuth(data.user, data.access_token);
       toast.success("Registered successfully!");
-      navigate({ to: "/" });
+      navigate({ to: "/dashboard" });
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Registration failed");
+      const errorMessage = error.response?.data?.detail || "Registration failed";
+      toast.error(errorMessage);
     },
   });
 };

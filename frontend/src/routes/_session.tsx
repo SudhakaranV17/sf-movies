@@ -1,9 +1,11 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_session")({
-  component: RouteComponent,
+  // Redirect authenticated users away from auth pages
+  beforeLoad: ({ context }) => {
+    if (context.authentication.isAuthenticated) {
+      throw redirect({ to: "/dashboard" });
+    }
+  },
+  component: () => <Outlet />,
 });
-
-function RouteComponent() {
-  return <Outlet />;
-}
