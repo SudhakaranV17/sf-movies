@@ -1,7 +1,6 @@
 import PageNotFound from "@/pages/not-found.page";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
-import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 
 // Context type
 interface RouterContext {
