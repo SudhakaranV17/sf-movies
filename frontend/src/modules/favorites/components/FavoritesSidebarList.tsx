@@ -1,11 +1,15 @@
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 import { Skeleton } from "primereact/skeleton";
+import { Paginator } from "primereact/paginator";
+import type { PaginatorPageChangeEvent } from "primereact/paginator";
 import { useSearch } from "@tanstack/react-router";
 
 import { useFavorites } from "@/modules/favorites/hooks/favorites.hook";
 import { useFavoritesStore } from "@/modules/favorites/store/favorites.store";
 import { useMoviesStore } from "@/modules/movies/store/movies.store";
 import type { MovieSearchParams } from "@/modules/movies/types/movies.type";
+
+const ITEMS_PER_PAGE = 30;
 
 function matchesYear(
   releaseYear: number | undefined | null,
@@ -17,7 +21,11 @@ function matchesYear(
   return releaseYear >= decade && releaseYear < decade + 10;
 }
 
-export default function FavoritesSidebarList() {
+interface FavoritesSidebarListProps {
+  onVisibleCountChange?: (first: number, last: number) => void;
+}
+
+export default function FavoritesSidebarList({ onVisibleCountChange }: FavoritesSidebarListProps) {
   const searchParams = useSearch({ strict: false }) as MovieSearchParams;
 
   const { isLoading } = useFavorites();
@@ -25,8 +33,9 @@ export default function FavoritesSidebarList() {
   const selectedMovie = useMoviesStore((state) => state.selectedMovie);
   const setSelectedMovie = useMoviesStore((state) => state.setSelectedMovie);
 
-  // Ref map for scroll-into-view
-  const itemRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const selectedItemRef = useRef<HTMLButtonElement>(null);
+  const [first, setFirst] = useState(0); // First item index (0-based)
 
   const filtered = useMemo(() => {
     let result = favorites.map((f) => f.movie);
@@ -56,6 +65,26 @@ export default function FavoritesSidebarList() {
     });
   }, [favorites, searchParams.q, searchParams.year, searchParams.sort]);
 
+  // Calculate pagination
+  const totalRecords = filtered.length;
+  const currentPage = Math.floor(first / ITEMS_PER_PAGE) + 1;
+  const startIndex = first;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedFavorites = filtered.slice(startIndex, endIndex);
+
+  // Report visible range to parent
+  useEffect(() => {
+    if (onVisibleCountChange) {
+      const lastIndex = Math.min(first + ITEMS_PER_PAGE, totalRecords);
+      onVisibleCountChange(first + 1, lastIndex);
+    }
+  }, [first, totalRecords, onVisibleCountChange]);
+
+  // When filtered list changes, reset to first page
+  useEffect(() => {
+    setFirst(0);
+  }, [filtered.length]);
+
   // When favorites list changes and the currently selected movie is no longer
   // in the list (i.e. it was just removed), auto-select the next item by the
   // same index it was at, or the last item if it was at the end, or clear
@@ -79,17 +108,27 @@ export default function FavoritesSidebarList() {
       const nextIndex = Math.min(removedIndex, filtered.length - 1);
       setSelectedMovie(filtered[Math.max(0, nextIndex)]);
     }
-  }, [filtered]);
+  }, [filtered, selectedMovie, setSelectedMovie]);
 
   // Scroll active item into view when selectedMovie changes
   useEffect(() => {
     if (!selectedMovie) return;
-    const el = itemRefs.current.get(selectedMovie.id);
-    if (el) el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    setTimeout(() => {
+      selectedItemRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 100);
   }, [selectedMovie?.id]);
 
+  const onPageChange = (event: PaginatorPageChangeEvent) => {
+    setFirst(event.first);
+    // Scroll to top of list when changing pages
+    scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
-    <div className="flex flex-col flex-1 overflow-y-auto">
+    <div className="flex flex-col flex-1 min-h-0">
       {isLoading ? (
         <div className="flex flex-col flex-1 gap-4 p-2.5 overflow-hidden">
           {[...Array(6)].map((_, i) => (
@@ -105,45 +144,81 @@ export default function FavoritesSidebarList() {
           <span className="text-text-dim text-xs">No favourites yet</span>
         </div>
       ) : (
-        filtered.map((movie) => {
-          const isActive = selectedMovie?.id === movie.id;
-          return (
-            <button
-              key={movie.id}
-              ref={(el) => {
-                if (el) itemRefs.current.set(movie.id, el);
-                else itemRefs.current.delete(movie.id);
-              }}
-              onClick={() => setSelectedMovie(isActive ? null : movie)}
-              className={`px-2.5 py-2 border-b border-border-subtle cursor-pointer flex items-center gap-2 text-left w-full bg-transparent border-l-2 transition-colors ${
-                isActive
-                  ? "bg-bg-overlay border-l-accent"
-                  : "border-l-transparent hover:bg-bg-overlay/50"
-              }`}
-            >
-              <div
-                className={`rounded-full w-1.5 h-1.5 shrink-0 border transition-colors ${
-                  isActive
-                    ? "bg-accent border-accent-light"
-                    : "bg-accent-dim border-accent/25"
-                }`}
-              />
-              <div className="flex-1 min-w-0">
-                <div
-                  className={`font-medium text-[13px] truncate ${
-                    isActive ? "text-text-primary" : "text-text-secondary"
+        <>
+          {/* Scrollable list */}
+          <div ref={scrollRef} className="flex flex-col flex-1 overflow-y-auto">
+            {paginatedFavorites.map((movie) => {
+              const isActive = selectedMovie?.id === movie.id;
+              return (
+                <button
+                  key={movie.id}
+                  ref={isActive ? selectedItemRef : null}
+                  onClick={() => setSelectedMovie(isActive ? null : movie)}
+                  className={`px-2.5 py-2 border-b border-border-subtle cursor-pointer flex items-center gap-2 text-left w-full bg-transparent border-l-2 transition-colors ${
+                    isActive
+                      ? "bg-bg-overlay border-l-accent"
+                      : "border-l-transparent hover:bg-bg-overlay/50"
                   }`}
                 >
-                  {movie.title}
-                </div>
-                <div className="mt-0.5 text-[11px] text-text-dim">
-                  {movie.locations || "No location info"} ·{" "}
-                  {movie.release_year}
-                </div>
-              </div>
-            </button>
-          );
-        })
+                  <div
+                    className={`rounded-full w-1.5 h-1.5 shrink-0 border transition-colors ${
+                      isActive
+                        ? "bg-accent border-accent-light"
+                        : "bg-accent-dim border-accent/25"
+                    }`}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div
+                      className={`font-medium text-[13px] truncate ${
+                        isActive ? "text-text-primary" : "text-text-secondary"
+                      }`}
+                    >
+                      {movie.title}
+                    </div>
+                    <div className="mt-0.5 text-[11px] text-text-dim">
+                      {movie.locations || "No location info"} ·{" "}
+                      {movie.release_year}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Paginator */}
+          {totalRecords > ITEMS_PER_PAGE && (
+            <div className="border-t border-border-subtle bg-bg-surface">
+              <Paginator
+                first={first}
+                rows={ITEMS_PER_PAGE}
+                totalRecords={totalRecords}
+                onPageChange={onPageChange}
+                template={{
+                  layout: "FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink",
+                }}
+                currentPageReportTemplate={`Page ${currentPage} of ${Math.ceil(totalRecords / ITEMS_PER_PAGE)}`}
+                pt={{
+                  root: { className: "bg-bg-surface border-0 p-2" },
+                  firstPageButton: { 
+                    className: "min-w-[2rem] h-8 text-text-secondary hover:bg-bg-overlay border border-border-subtle rounded-[5px] mx-0.5"
+                  },
+                  prevPageButton: { 
+                    className: "min-w-[2rem] h-8 text-text-secondary hover:bg-bg-overlay border border-border-subtle rounded-[5px] mx-0.5"
+                  },
+                  nextPageButton: { 
+                    className: "min-w-[2rem] h-8 text-text-secondary hover:bg-bg-overlay border border-border-subtle rounded-[5px] mx-0.5"
+                  },
+                  lastPageButton: { 
+                    className: "min-w-[2rem] h-8 text-text-secondary hover:bg-bg-overlay border border-border-subtle rounded-[5px] mx-0.5"
+                  },
+                  current: { 
+                    className: "text-text-secondary text-xs px-2 min-w-0"
+                  },
+                }}
+              />
+            </div>
+          )}
+        </>
       )}
     </div>
   );

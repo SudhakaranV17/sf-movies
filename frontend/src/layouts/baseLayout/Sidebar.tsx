@@ -194,7 +194,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="flex justify-between items-center px-2.5 py-1.5 border-border-default border-b shrink-0">
           <span className="text-text-secondary text-xs font-medium">
             {isFavorites ? (
-              <>{favoriteCount} saved</>
+              <>
+                {favoriteCount > 0
+                  ? `${visibleRange[0]}–${visibleRange[1]} of ${favoriteCount} saved`
+                  : "0 saved"}
+              </>
             ) : (
               <>
                 {movieCount > 0
@@ -219,7 +223,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* Route-aware list panel */}
         {isFavorites ? (
-          <FavoritesSidebarList />
+          <FavoritesSidebarList onVisibleCountChange={(first, last) => setVisibleRange([first, last])} />
         ) : (
           <MoviesSidebarList onVisibleCountChange={(first, last) => setVisibleRange([first, last])} />
         )}
