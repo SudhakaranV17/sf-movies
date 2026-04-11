@@ -7,7 +7,6 @@ from routers import auth, movies, favorites
 from services.movie_service import sync_movies
 from logger import get_logger
 from dotenv import load_dotenv
-import os
 load_dotenv()
 logger = get_logger(__name__)
 
@@ -40,7 +39,7 @@ allowed_origins = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
