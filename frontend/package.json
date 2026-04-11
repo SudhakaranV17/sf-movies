@@ -17,6 +17,7 @@
     "@tanstack/react-query-devtools": "^5.97.0",
     "@tanstack/react-router": "^1.168.10",
     "@tanstack/react-router-devtools": "^1.166.11",
+    "@tanstack/react-virtual": "^3.13.23",
     "@tanstack/router-plugin": "^1.167.12",
     "axios": "^1.15.0",
     "leaflet": "^1.9.4",

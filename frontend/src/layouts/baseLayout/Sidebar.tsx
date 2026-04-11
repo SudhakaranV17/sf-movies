@@ -12,7 +12,7 @@ import FavoritesSidebarList from "@/modules/favorites/components/FavoritesSideba
 
 /* ─── Filter options ─────────────────────────── */
 const YEAR_OPTIONS = [
-  { label: "All years", value: null },
+  { label: "All years", value: "" },
   { label: "2020s", value: "2020s" },
   { label: "2010s", value: "2010s" },
   { label: "2000s", value: "2000s" },
@@ -46,6 +46,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const setYearStore = useMoviesStore((state) => state.setYear);
   const setSortStore = useMoviesStore((state) => state.setSort);
   const resetFiltersStore = useMoviesStore((state) => state.resetFilters);
+  const setIsFilteringStore = useMoviesStore((state) => state.setIsFiltering);
   const movieCount = useMoviesStore((state) => state.movies.length);
   const favoriteCount = useFavoritesStore((state) => state.favorites.length);
 
@@ -66,20 +67,25 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const handleSearchChange = (val: string) => {
     setLocalSearch(val);
     setSearchStore(val);
+    setIsFilteringStore(true);
     debouncedNavigate(val);
   };
 
-  const handleYearChange = (val: string | null) => {
-    setYearStore(val);
+  const handleYearChange = (val: string) => {
+    // "" means "All years" — omit the param entirely so Zod sees undefined
+    const year = val || undefined;
+    setYearStore(year ?? null);
+    setIsFilteringStore(true);
     navigate({
       to: currentPath,
-      search: (prev) => ({ ...prev, year: val || undefined }),
+      search: (prev) => ({ ...prev, year }),
       replace: true,
     });
   };
 
   const handleSortChange = (val: MovieSortOption) => {
     setSortStore(val);
+    setIsFilteringStore(true);
     navigate({
       to: currentPath,
       search: (prev) => ({ ...prev, sort: val || undefined }),
@@ -88,31 +94,46 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   };
 
   const handleReset = () => {
+    // Cancel any pending debounced search navigation first so it doesn't
+    // fire after the reset and re-apply the old query string.
+    debouncedNavigate.cancel();
     setLocalSearch("");
     resetFiltersStore();
+    setIsFilteringStore(true);
     navigate({ to: currentPath, search: () => ({}), replace: true });
   };
 
   return (
     <>
-      {/* Mobile backdrop */}
+      {/* Mobile backdrop — sits above map overlays (z-999) but below sidebar */}
       <div
         onClick={onClose}
-        className={`fixed inset-0 z-40 bg-black/50 md:hidden transition-opacity duration-300 ${
+        className={`fixed inset-0 z-1000 bg-black/50 md:hidden transition-opacity duration-300 ${
           isOpen
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none"
         }`}
       />
 
-      {/* Sidebar panel */}
+      {/* Sidebar panel — z-[1001] so it always sits on top of everything */}
       <aside
-        className={`fixed md:relative inset-y-0 left-0 z-50
+        className={`fixed md:relative inset-y-0 left-0 z-1001
           w-[75%] max-w-[260px] md:w-[26%] lg:w-[20%] xl:w-[18%]
           md:shrink-0 bg-bg-surface border-r border-border-strong
           flex flex-col transition-transform duration-300 ease-in-out
           ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
       >
+        {/* Mobile-only header row with close button */}
+        <div className="flex items-center justify-between px-2.5 py-2 border-b border-border-strong md:hidden shrink-0">
+          <span className="text-[11px] font-medium text-text-primary">Filters</span>
+          <button
+            onClick={onClose}
+            className="flex items-center justify-center w-7 h-7 rounded-[5px] bg-bg-overlay border border-border-strong text-text-dim hover:text-text-secondary cursor-pointer transition-colors"
+          >
+            <i className="pi pi-times text-[11px]" />
+          </button>
+        </div>
+
         {/* Filter controls */}
         <div className="flex flex-col gap-1.5 p-2 border-border-strong border-b">
           <div className="flex flex-col gap-1">
@@ -139,7 +160,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             <Dropdown
               className="px-1 w-full"
               panelClassName="z-[9999]"
-              value={searchParams.year || null}
+              value={searchParams.year || ""}
               onChange={(e) => handleYearChange(e.value)}
               options={YEAR_OPTIONS}
               optionLabel="label"

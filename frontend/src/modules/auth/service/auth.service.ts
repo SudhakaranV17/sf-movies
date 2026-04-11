@@ -1,17 +1,17 @@
 import apiClient from "@/shared/service/apiClient";
-import { AuthResponseSchema } from "../helpers/auth.helper";
+import { AuthResponseSchema } from "../types/auth.schema";
 import type {
   LoginCredentials,
   RegisterCredentials,
   AuthResponse,
 } from "../types/auth.type";
 import { useMutation } from "@tanstack/react-query";
-import { endpoints } from "@/config/constants";
+import { ENDPOINTS } from "@/config/constants";
 
 export const useLoginMutation = () => {
   const postData = async (credentials: LoginCredentials) => {
     const response = await apiClient.post(
-      endpoints.AUTH_LOGIN,
+      ENDPOINTS.AUTH_LOGIN,
       AuthResponseSchema,
       credentials,
     );
@@ -26,7 +26,7 @@ export const useLoginMutation = () => {
 export const useRegisterMutation = () => {
   const postData = async (credentials: RegisterCredentials) => {
     const response = await apiClient.post(
-      endpoints.AUTH_REGISTER,
+      ENDPOINTS.AUTH_REGISTER,
       AuthResponseSchema,
       credentials,
     );

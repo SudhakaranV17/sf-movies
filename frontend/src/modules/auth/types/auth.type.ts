@@ -1,5 +1,3 @@
-// modules/auth/types/auth.type.ts
-
 export interface LoginCredentials {
   email: string;
   password: string;

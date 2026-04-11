@@ -101,7 +101,7 @@ export const ErrorBoundary: React.FC<ErrorBoundaryProps> = ({
   return (
     <ReactErrorBoundary
       FallbackComponent={ErrorFallback}
-      onError={handleError}
+      onError={handleError as any}
       onReset={() => console.log("ErrorBoundary reset")}
     >
       {children}

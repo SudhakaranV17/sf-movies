@@ -1,17 +1,23 @@
 import { z } from "zod";
 
-export type MovieSortOption = "title_asc" | "title_desc" | "year_asc" | "year_desc";
+export type MovieSortOption =
+  | "title_asc"
+  | "title_desc"
+  | "year_asc"
+  | "year_desc";
 
 export interface MovieSearchParams {
   q?: string;
   year?: string;
   sort?: string;
+  movieId?: number;
 }
 
 export const MovieSearchSchema = z.object({
   q: z.string().optional(),
   year: z.string().optional(),
   sort: z.string().optional(),
+  movieId: z.coerce.number().optional(), // convert to number if possible
 });
 
 /**

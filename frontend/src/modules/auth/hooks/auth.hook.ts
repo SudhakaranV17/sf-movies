@@ -2,7 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useForm } from "@/lib/hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLoginMutation, useRegisterMutation } from "../service/auth.service";
-import { LoginSchema, RegisterSchema } from "../helpers/auth.helper";
+import { LoginSchema, RegisterSchema } from "../types/auth.schema";
 import type { LoginCredentials, RegisterCredentials } from "../types/auth.type";
 import { useAuthStore } from "@/shared/store/useAuthStore";
 import toast from "react-hot-toast";

@@ -1,6 +1,6 @@
 import apiClient from "@/shared/service/apiClient";
 import { useQuery } from "@tanstack/react-query";
-import { endpoints, queryKeyProvider } from "@/config/constants";
+import { ENDPOINTS, QUERYKEYPROVIDER } from "@/config/constants";
 import { MovieSchema } from "../types/movies.type";
 import type { Movie, MovieSearchParams } from "../types/movies.type";
 
@@ -19,8 +19,8 @@ export const useMoviesQuery = (
 
     const queryString = searchParams.toString();
     const endpoint = q
-      ? `${endpoints.MOVIES_SEARCH}?${queryString}`
-      : `${endpoints.MOVIES_LIST}${queryString ? `?${queryString}` : ""}`;
+      ? `${ENDPOINTS.MOVIES_SEARCH}?${queryString}`
+      : `${ENDPOINTS.MOVIES_LIST}${queryString ? `?${queryString}` : ""}`;
 
     const response = await apiClient.get(
       endpoint,
@@ -32,9 +32,13 @@ export const useMoviesQuery = (
   };
 
   return useQuery({
-    queryKey: [queryKeyProvider.MOVIES_LIST_DATA, params],
+    queryKey: [QUERYKEYPROVIDER.MOVIES_LIST_DATA, params],
     queryFn: fetchData,
     enabled: isEnabled,
     placeholderData: (prev) => prev,
+    // Movies are static for the lifetime of the session — never refetch
+    // unless the query key changes (i.e. filters change).
+    staleTime: Infinity,
+    gcTime: Infinity,
   });
 };

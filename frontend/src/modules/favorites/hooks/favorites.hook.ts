@@ -2,9 +2,13 @@ import { useEffect } from "react";
 import { useFavoritesQuery } from "../service/favorites.service";
 import { useFavoritesStore } from "../store/favorites.store";
 
-export const useFavorites = () => {
+interface UseFavoritesOptions {
+  enabled?: boolean;
+}
+
+export const useFavorites = ({ enabled = true }: UseFavoritesOptions = {}) => {
   const setFavorites = useFavoritesStore((state) => state.setFavorites);
-  const query = useFavoritesQuery();
+  const query = useFavoritesQuery(enabled);
 
   useEffect(() => {
     if (query.data) {
