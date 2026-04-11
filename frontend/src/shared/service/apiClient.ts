@@ -22,7 +22,7 @@ class ApiClient {
     if (!ApiClient.instance) {
       ApiClient.instance = new ApiClient(
         axios.create({
-          baseURL: "/api",
+          baseURL: import.meta.env.DEV ? "/api" : import.meta.env.VITE_BASE_URL,
           withCredentials: true,
           headers: {
             "Content-Type": "application/json",
