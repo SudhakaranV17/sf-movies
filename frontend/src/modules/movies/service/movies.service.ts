@@ -25,7 +25,6 @@ export const useMoviesQuery = (
     const response = await apiClient.get(
       endpoint,
       MovieSchema,
-      true, // isArray
     );
 
     return response as Movie[];
