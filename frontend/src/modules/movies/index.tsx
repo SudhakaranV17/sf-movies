@@ -34,10 +34,9 @@ export default function MoviesModule() {
   // don't wipe an incoming movieId param before movies have loaded.
   const isMounted = useRef(false);
   useEffect(() => {
-    if (!isMounted.current) {
-      isMounted.current = true;
-      return;
-    }
+    // Don't wipe the movieId from the URL if we're still waiting for movies to load.
+    if (!selectedMovie && movies.length === 0 && searchParams.movieId) return;
+
     navigate({
       to: location.pathname,
       search: (prev) => ({
