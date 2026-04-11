@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { InputText } from "primereact/inputtext";
 import { Dropdown } from "primereact/dropdown";
 import { useSearch, useNavigate, useRouterState } from "@tanstack/react-router";
@@ -52,6 +52,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const [localSearch, setLocalSearch] = useState(searchParams.q || "");
   const [visibleRange, setVisibleRange] = useState<[number, number]>([1, 50]);
+
+  // Memoize the callback to prevent infinite loops
+  const handleVisibleCountChange = useCallback((first: number, last: number) => {
+    setVisibleRange([first, last]);
+  }, []);
 
   // Check if any filters are applied
   const hasActiveFilters = Boolean(
@@ -223,9 +228,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* Route-aware list panel */}
         {isFavorites ? (
-          <FavoritesSidebarList onVisibleCountChange={(first, last) => setVisibleRange([first, last])} />
+          <FavoritesSidebarList onVisibleCountChange={handleVisibleCountChange} />
         ) : (
-          <MoviesSidebarList onVisibleCountChange={(first, last) => setVisibleRange([first, last])} />
+          <MoviesSidebarList onVisibleCountChange={handleVisibleCountChange} />
         )}
       </aside>
     </>
