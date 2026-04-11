@@ -7,6 +7,8 @@ from routers import auth, movies, favorites
 from services.movie_service import sync_movies
 from logger import get_logger
 from dotenv import load_dotenv
+import os
+
 load_dotenv()
 logger = get_logger(__name__)
 
