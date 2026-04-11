@@ -33,8 +33,12 @@ export default function AuthHeroPanel() {
       <div className="flex flex-col gap-4">
         {/* Ghost watermark title */}
         <h1
-          className="font-medium leading-none select-none text-bg-overlay"
-          style={{ fontSize: "clamp(48px, 6vw, 72px)", letterSpacing: "-2px" }}
+          className="font-medium leading-none select-none"
+          style={{ 
+            fontSize: "clamp(48px, 6vw, 72px)", 
+            letterSpacing: "-2px",
+            color: "var(--color-border-default)"
+          }}
         >
           San
           <br />
@@ -56,8 +60,8 @@ export default function AuthHeroPanel() {
               key={label}
               className="bg-bg-surface border border-border-default rounded-[6px] px-2.5 py-1.5 flex flex-col gap-0.5"
             >
-              <span className="text-base font-medium text-accent-dim">{value}</span>
-              <span className="text-[9px] text-text-ghost uppercase tracking-wide">
+              <span className="text-base font-medium text-accent">{value}</span>
+              <span className="text-[9px] text-text-muted uppercase tracking-wide">
                 {label}
               </span>
             </div>
@@ -69,7 +73,7 @@ export default function AuthHeroPanel() {
           {FILMING_LOCATIONS.map((location) => (
             <span
               key={location}
-              className="text-[9px] px-2 py-0.5 rounded-[4px] bg-bg-surface border border-border-default text-accent-dim"
+              className="text-[9px] px-2 py-0.5 rounded-[4px] bg-bg-surface border border-border-default text-text-muted"
             >
               {location}
             </span>

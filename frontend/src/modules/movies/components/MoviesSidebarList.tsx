@@ -118,6 +118,28 @@ export default function MoviesSidebarList({ onVisibleCountChange }: MoviesSideba
     );
   }
 
+  // Check if filters are active
+  const hasActiveFilters = Boolean(searchParams.q || searchParams.year);
+
+  // Show empty state when no movies found
+  if (totalRecords === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center flex-1 gap-2 p-4 text-center">
+        <i className="pi pi-search text-text-dim text-2xl" />
+        <div className="flex flex-col gap-1">
+          <span className="text-text-secondary text-sm font-medium">
+            {hasActiveFilters ? "No results found" : "No movies available"}
+          </span>
+          <span className="text-text-dim text-xs">
+            {hasActiveFilters
+              ? "Try adjusting your search or filters"
+              : "Movies will appear here"}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* Scrollable list */}

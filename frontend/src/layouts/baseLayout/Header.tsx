@@ -1,6 +1,7 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useAuthStore } from "@/shared/store/useAuthStore";
 import { confirmDialog, ConfirmDialog } from "primereact/confirmdialog";
+import ThemeToggle from "@/shared/components/ThemeToggle";
 
 interface HeaderProps {
   isOpen: boolean;
@@ -49,6 +50,9 @@ export default function Header({ isOpen, onMenuToggle }: HeaderProps) {
 
       {/* Right: nav actions */}
       <div className="flex items-center gap-2">
+        {/* Theme Toggle */}
+        <ThemeToggle />
+
         {/* Favorites / Back to map */}
         {isFavorites ? (
           <Link

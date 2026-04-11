@@ -40,7 +40,7 @@ export function LoginPage() {
         <LoginForm />
 
         {/* Footer link */}
-        <p className="text-center text-[10px] text-accent-dim mt-3">
+        <p className="text-center text-[10px] text-text-muted mt-3">
           No account?{" "}
           <Link
             to="/register"
@@ -90,7 +90,7 @@ export function RegisterPage() {
         <RegisterForm />
 
         {/* Footer link */}
-        <p className="text-center text-[10px] text-accent-dim mt-3">
+        <p className="text-center text-[10px] text-text-muted mt-3">
           Already have an account?{" "}
           <Link
             to="/login"

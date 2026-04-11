@@ -6,7 +6,7 @@ A full-stack web application that lets users explore where movies were filmed in
 
 ## Live Demo
 
-> Deployment coming soon on Render
+ [sf-movies-beta.vercel.app](https://sf-movies-beta.vercel.app/dashboard)
 
 ---
 

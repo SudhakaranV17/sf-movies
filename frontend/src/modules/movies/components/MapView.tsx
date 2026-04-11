@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 
 import { useMoviesStore } from "@/modules/movies/store/movies.store";
+import { useThemeStore } from "@/shared/store/theme.store";
 import MovieMarker from "./MovieMarker";
 import type { Movie } from "@/modules/movies/types/movies.type";
 
@@ -97,6 +98,7 @@ export default function MapView({ movies }: MapViewProps) {
   const selectedMovie = useMoviesStore((state) => state.selectedMovie);
   const mapCenter = useMoviesStore((state) => state.mapCenter);
   const mapZoom = useMoviesStore((state) => state.mapZoom);
+  const theme = useThemeStore((state) => state.theme);
 
   // Stable list — only recomputes when the movies prop changes,
   // not when selectedMovie changes. Each MovieMarker handles its own
@@ -105,6 +107,11 @@ export default function MapView({ movies }: MapViewProps) {
     () => movies.filter((m) => m.latitude && m.longitude),
     [movies],
   );
+
+  // Theme-aware tile layer URL
+  const tileUrl = theme === "dark"
+    ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+    : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
 
   return (
     /*
@@ -135,7 +142,8 @@ export default function MapView({ movies }: MapViewProps) {
       fadeAnimation={true}
     >
       <TileLayer
-        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+        key={theme} // Force re-render when theme changes
+        url={tileUrl}
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>'
         subdomains="abcd"
         maxZoom={MAX_ZOOM}

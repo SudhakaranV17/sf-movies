@@ -139,9 +139,18 @@ export default function FavoritesSidebarList({ onVisibleCountChange }: Favorites
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center flex-1 gap-1 p-4 text-center">
-          <i className="text-text-dim text-lg pi pi-heart" />
-          <span className="text-text-dim text-xs">No favourites yet</span>
+        <div className="flex flex-col items-center justify-center flex-1 gap-2 p-4 text-center">
+          <i className={`text-text-dim text-2xl ${searchParams.q || searchParams.year ? "pi pi-search" : "pi pi-heart"}`} />
+          <div className="flex flex-col gap-1">
+            <span className="text-text-secondary text-sm font-medium">
+              {searchParams.q || searchParams.year ? "No results found" : "No favorites yet"}
+            </span>
+            <span className="text-text-dim text-xs">
+              {searchParams.q || searchParams.year
+                ? "Try adjusting your search or filters"
+                : "Save movies to see them here"}
+            </span>
+          </div>
         </div>
       ) : (
         <>

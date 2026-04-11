@@ -1,4 +1,4 @@
-import { StrictMode } from "react";
+import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { PrimeReactProvider } from "primereact/api";
 import { Toaster } from "react-hot-toast";
@@ -8,11 +8,24 @@ import "leaflet/dist/leaflet.css";
 import "./index.css";
 import App from "./App.tsx";
 import QueryProvider from "./shared/providers/QueryProvider.tsx";
+import { useThemeStore } from "./shared/store/theme.store";
+
+function ThemeInitializer() {
+  const theme = useThemeStore((state) => state.theme);
+
+  useEffect(() => {
+    // Initialize theme on mount
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
+
+  return null;
+}
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryProvider>
       <PrimeReactProvider>
+        <ThemeInitializer />
         <App />
         <Toaster
           position="top-right"
