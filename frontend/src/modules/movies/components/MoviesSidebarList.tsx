@@ -1,16 +1,21 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Skeleton } from "primereact/skeleton";
+import { Paginator } from "primereact/paginator";
+import type { PaginatorPageChangeEvent } from "primereact/paginator";
 import { useSearch } from "@tanstack/react-router";
-import { useVirtualizer } from "@tanstack/react-virtual";
 
 import { useMovies } from "@/modules/movies/hooks/movies.hook";
 import { useMoviesStore } from "@/modules/movies/store/movies.store";
 import type { MovieSortOption } from "@/modules/movies/types/movies.type";
 
-const ITEM_HEIGHT = 52;
 const SKELETON_COUNT = 8;
+const ITEMS_PER_PAGE = 50;
 
-export default function MoviesSidebarList() {
+interface MoviesSidebarListProps {
+  onVisibleCountChange?: (first: number, last: number) => void;
+}
+
+export default function MoviesSidebarList({ onVisibleCountChange }: MoviesSidebarListProps) {
   const searchParams = useSearch({ strict: false });
 
   const { isLoading } = useMovies({
@@ -25,34 +30,82 @@ export default function MoviesSidebarList() {
   const setSelectedMovie = useMoviesStore((state) => state.setSelectedMovie);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const selectedItemRef = useRef<HTMLButtonElement>(null);
+  const isNavigatingToMovie = useRef(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [first, setFirst] = useState(0); // First item index (0-based)
 
-  const virtualizer = useVirtualizer({
-    count: movies.length,
-    getScrollElement: () => scrollRef.current,
-    estimateSize: () => ITEM_HEIGHT,
-    overscan: 8,
-  });
+  // Calculate pagination
+  const totalRecords = movies.length;
+  const currentPage = Math.floor(first / ITEMS_PER_PAGE) + 1;
+  const startIndex = first;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedMovies = movies.slice(startIndex, endIndex);
 
-  const virtualItems = virtualizer.getVirtualItems();
+  // Report visible range to parent
+  useEffect(() => {
+    if (onVisibleCountChange) {
+      const lastIndex = Math.min(first + ITEMS_PER_PAGE, totalRecords);
+      onVisibleCountChange(first + 1, lastIndex);
+    }
+  }, [first, totalRecords, onVisibleCountChange]);
 
-  // Scroll the active item into view on:
-  //  - map marker click (selectedMovie changes)
-  //  - navigation return (movies re-populates)
-  //  - shared-link auto-select (both change together)
+  // When movies change (filter/sort), reset to first page
+  useEffect(() => {
+    setFirst(0);
+  }, [movies.length]);
+
+  // Handle movie selection and auto-scroll
   useEffect(() => {
     if (!selectedMovie || movies.length === 0) return;
-    const idx = movies.findIndex((m) => m.id === selectedMovie.id);
-    if (idx === -1) return;
-    // Use a small delay so the virtualizer has had a chance to measure rows
-    // before we ask it to scroll (especially after a list re-render).
-    const t = setTimeout(() => {
-      virtualizer.scrollToIndex(idx, { align: "center", behavior: "smooth" });
-    }, 50);
-    return () => clearTimeout(t);
+    if (isNavigatingToMovie.current) return; // Prevent re-triggering during navigation
+
+    const selectedIndex = movies.findIndex((m) => m.id === selectedMovie.id);
+    if (selectedIndex === -1) return;
+
+    // Calculate the first index of the page containing the selected movie
+    const targetFirst = Math.floor(selectedIndex / ITEMS_PER_PAGE) * ITEMS_PER_PAGE;
+
+    // If selected movie is not on current page, navigate to it with transition
+    if (targetFirst !== first) {
+      isNavigatingToMovie.current = true;
+      setIsTransitioning(true);
+      setFirst(targetFirst);
+      
+      const timer = setTimeout(() => {
+        setIsTransitioning(false);
+        isNavigatingToMovie.current = false;
+      }, 300);
+
+      return () => {
+        clearTimeout(timer);
+        isNavigatingToMovie.current = false;
+      };
+    }
   }, [selectedMovie?.id, movies.length]);
 
-  // Show skeleton on initial load OR while filtering (search/year/sort/reset)
-  if (isLoading || isFiltering) {
+  // Separate effect for scrolling to selected item
+  useEffect(() => {
+    if (!selectedMovie || isTransitioning) return;
+
+    const timer = setTimeout(() => {
+      selectedItemRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [selectedMovie?.id, isTransitioning, first]);
+
+  const onPageChange = (event: PaginatorPageChangeEvent) => {
+    setFirst(event.first);
+    // Scroll to top of list when changing pages
+    scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Show skeleton on initial load OR while filtering OR during page transition
+  if (isLoading || isFiltering || isTransitioning) {
     return (
       <div className="flex flex-col flex-1 gap-4 p-2.5 overflow-hidden">
         {[...Array(SKELETON_COUNT)].map((_, i) => (
@@ -66,23 +119,17 @@ export default function MoviesSidebarList() {
   }
 
   return (
-    <div ref={scrollRef} className="flex flex-col flex-1 overflow-y-auto">
-      <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
-        {virtualItems.map((vItem) => {
-          const movie = movies[vItem.index];
+    <div className="flex flex-col flex-1 min-h-0">
+      {/* Scrollable list */}
+      <div ref={scrollRef} className="flex flex-col flex-1 overflow-y-auto">
+        {paginatedMovies.map((movie) => {
           const isActive = selectedMovie?.id === movie.id;
+
           return (
             <button
               key={movie.id}
-              data-index={vItem.index}
-              ref={virtualizer.measureElement}
+              ref={isActive ? selectedItemRef : null}
               onClick={() => setSelectedMovie(isActive ? null : movie)}
-              style={{
-                position: "absolute",
-                top: vItem.start,
-                left: 0,
-                right: 0,
-              }}
               className={`px-2.5 py-2 border-b border-border-subtle cursor-pointer flex items-center gap-2 text-left w-full bg-transparent border-l-2 transition-colors ${
                 isActive
                   ? "bg-bg-overlay border-l-accent"
@@ -113,15 +160,38 @@ export default function MoviesSidebarList() {
         })}
       </div>
 
-      {/* Count badge after all items */}
-      {movies.length > 0 && (
-        <div className="flex justify-center py-4">
-          <div className="flex items-center gap-1.5 bg-bg-overlay px-3 py-1 border border-border-subtle rounded-full">
-            <div className="rounded-full w-1.5 h-1.5 bg-accent-dim" />
-            <span className="font-medium text-[10px] text-text-dim">
-              {movies.length} films
-            </span>
-          </div>
+      {/* Paginator */}
+      {totalRecords > ITEMS_PER_PAGE && (
+        <div className="border-t border-border-subtle bg-bg-surface">
+          <Paginator
+            first={first}
+            rows={ITEMS_PER_PAGE}
+            totalRecords={totalRecords}
+            onPageChange={onPageChange}
+            
+            template={{
+              layout: "FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink",
+            }}
+            currentPageReportTemplate={`Page ${currentPage} of ${Math.ceil(totalRecords / ITEMS_PER_PAGE)}`}
+            pt={{
+              root: { className: "bg-bg-surface border-0 p-2" },
+              firstPageButton: { 
+                className: "min-w-[2rem] h-8 text-text-secondary hover:bg-bg-overlay border border-border-subtle rounded-[5px] mx-0.5"
+              },
+              prevPageButton: { 
+                className: "min-w-[2rem] h-8 text-text-secondary hover:bg-bg-overlay border border-border-subtle rounded-[5px] mx-0.5"
+              },
+              nextPageButton: { 
+                className: "min-w-[2rem] h-8 text-text-secondary hover:bg-bg-overlay border border-border-subtle rounded-[5px] mx-0.5"
+              },
+              lastPageButton: { 
+                className: "min-w-[2rem] h-8 text-text-secondary hover:bg-bg-overlay border border-border-subtle rounded-[5px] mx-0.5"
+              },
+              current: { 
+                className: "text-text-secondary text-xs px-2 min-w-0"
+              },
+            }}
+          />
         </div>
       )}
     </div>

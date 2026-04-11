@@ -16,7 +16,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     <>
       <ErrorBoundary>
         <Outlet />
-        <TanStackRouterDevtools />
+        {/* <TanStackRouterDevtools /> */}
       </ErrorBoundary>
     </>
   ),

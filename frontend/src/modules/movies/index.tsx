@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useSearch, useNavigate, useRouterState } from "@tanstack/react-router";
 
 import MapView from "@/modules/movies/components/MapView";
@@ -32,7 +32,6 @@ export default function MoviesModule() {
 
   // Sync selectedMovie back to URL — but skip the very first render so we
   // don't wipe an incoming movieId param before movies have loaded.
-  const isMounted = useRef(false);
   useEffect(() => {
     // Don't wipe the movieId from the URL if we're still waiting for movies to load.
     if (!selectedMovie && movies.length === 0 && searchParams.movieId) return;

@@ -51,6 +51,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const favoriteCount = useFavoritesStore((state) => state.favorites.length);
 
   const [localSearch, setLocalSearch] = useState(searchParams.q || "");
+  const [visibleRange, setVisibleRange] = useState<[number, number]>([1, 50]);
+
+  // Check if any filters are applied
+  const hasActiveFilters = Boolean(
+    searchParams.q || searchParams.year || (searchParams.sort && searchParams.sort !== "title_asc")
+  );
 
   const debouncedNavigate = useMemo(
     () =>
@@ -137,7 +143,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* Filter controls */}
         <div className="flex flex-col gap-1.5 p-2 border-border-strong border-b">
           <div className="flex flex-col gap-1">
-            <span className="text-[11px] text-text-dim uppercase tracking-[.05em]">
+            <span className="text-[11px] text-text-secondary font-medium uppercase tracking-[.05em]">
               Search
             </span>
             <div className="flex items-center gap-1.5 bg-bg-page px-2 py-1 border border-border-strong rounded-[5px]">
@@ -154,7 +160,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
 
           <div className="flex flex-col gap-1">
-            <span className="text-[11px] text-text-dim uppercase tracking-[.05em]">
+            <span className="text-[11px] text-text-secondary font-medium uppercase tracking-[.05em]">
               Year
             </span>
             <Dropdown
@@ -169,7 +175,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
 
           <div className="flex flex-col gap-1">
-            <span className="text-[11px] text-text-dim uppercase tracking-[.05em]">
+            <span className="text-[11px] text-text-secondary font-medium uppercase tracking-[.05em]">
               Sort by
             </span>
             <Dropdown
@@ -186,16 +192,25 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* List header with count */}
         <div className="flex justify-between items-center px-2.5 py-1.5 border-border-default border-b shrink-0">
-          <span className="text-text-dim text-xs">
+          <span className="text-text-secondary text-xs font-medium">
             {isFavorites ? (
               <>{favoriteCount} saved</>
             ) : (
-              <>{movieCount} films</>
+              <>
+                {movieCount > 0
+                  ? `${visibleRange[0]}-${visibleRange[1]} of ${movieCount} films`
+                  : "0 films"}
+              </>
             )}
           </span>
           <button
             onClick={handleReset}
-            className="flex items-center gap-1 bg-transparent hover:opacity-75 p-0 border-none text-accent text-xs transition-opacity cursor-pointer"
+            disabled={!hasActiveFilters}
+            className={`flex items-center gap-1 bg-transparent p-0 border-none text-xs transition-opacity ${
+              hasActiveFilters
+                ? "text-accent hover:opacity-75 cursor-pointer"
+                : "text-text-dim cursor-not-allowed opacity-50"
+            }`}
           >
             <i className="text-[10px] pi pi-refresh" />
             reset
@@ -203,7 +218,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         </div>
 
         {/* Route-aware list panel */}
-        {isFavorites ? <FavoritesSidebarList /> : <MoviesSidebarList />}
+        {isFavorites ? (
+          <FavoritesSidebarList />
+        ) : (
+          <MoviesSidebarList onVisibleCountChange={(first, last) => setVisibleRange([first, last])} />
+        )}
       </aside>
     </>
   );

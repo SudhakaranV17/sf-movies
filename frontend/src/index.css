@@ -26,7 +26,7 @@
   --color-text-primary: #e2e8f0;
   --color-text-secondary: #94a3b8;
   --color-text-muted: #64748b;
-  --color-text-dim: #334155;
+  --color-text-dim: #3341550; /* added extra 0 for bright color with the theme */
   --color-text-ghost: #1e3a55;
 
   /* ─── Accent ───────────────────────────────── */
