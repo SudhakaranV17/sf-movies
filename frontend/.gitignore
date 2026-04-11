@@ -25,3 +25,8 @@ dist-ssr
 .vite
 # TanStack Router
 .tanstack
+
+# Testing
+coverage
+*.coverage
+.nyc_output
