@@ -35,7 +35,7 @@ export default defineConfig(({ mode }) => {
       port: 3002,
       proxy: {
         "/api": {
-          target: env.VITE_BASE_URL || "http://localhost:8080",
+          target: env.VITE_BASE_URL,
           changeOrigin: true,
           rewrite: function (path: string) {
             return path.replace(/^\/api/, "");
