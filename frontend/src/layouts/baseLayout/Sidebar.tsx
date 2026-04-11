@@ -4,18 +4,11 @@ import { Dropdown } from "primereact/dropdown";
 import { useSearch, useNavigate, useRouterState } from "@tanstack/react-router";
 
 import { useMoviesStore } from "@/modules/movies/store/movies.store";
+import { useFavoritesStore } from "@/modules/favorites/store/favorites.store";
 import { debounce } from "@/shared/utils/common.utils";
-import type { Movie, MovieSortOption } from "@/modules/movies/types/movies.type";
+import type { MovieSortOption } from "@/modules/movies/types/movies.type";
 import MoviesSidebarList from "@/modules/movies/components/MoviesSidebarList";
 import FavoritesSidebarList from "@/modules/favorites/components/FavoritesSidebarList";
-
-/* ─── Types ─────────────────────────────────── */
-interface SidebarProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSelect?: (movie: Movie) => void;
-  onReset?: () => void;
-}
 
 /* ─── Filter options ─────────────────────────── */
 const YEAR_OPTIONS = [
@@ -35,13 +28,12 @@ const SORT_OPTIONS = [
   { label: "Year (oldest)", value: "year_asc" },
 ];
 
-/* ─── Component ──────────────────────────────── */
-export default function Sidebar({
-  isOpen,
-  onClose,
-  onSelect,
-  onReset,
-}: SidebarProps) {
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const searchParams = useSearch({ strict: false });
   const navigate = useNavigate();
   const { location } = useRouterState();
@@ -49,11 +41,13 @@ export default function Sidebar({
 
   const isFavorites = currentPath.includes("favorites");
 
-  // Store actions
+  // Store reads
   const setSearchStore = useMoviesStore((state) => state.setSearch);
   const setYearStore = useMoviesStore((state) => state.setYear);
   const setSortStore = useMoviesStore((state) => state.setSort);
   const resetFiltersStore = useMoviesStore((state) => state.resetFilters);
+  const movieCount = useMoviesStore((state) => state.movies.length);
+  const favoriteCount = useFavoritesStore((state) => state.favorites.length);
 
   const [localSearch, setLocalSearch] = useState(searchParams.q || "");
 
@@ -96,12 +90,7 @@ export default function Sidebar({
   const handleReset = () => {
     setLocalSearch("");
     resetFiltersStore();
-    navigate({
-      to: currentPath,
-      search: () => ({}),
-      replace: true,
-    });
-    onReset?.();
+    navigate({ to: currentPath, search: () => ({}), replace: true });
   };
 
   return (
@@ -126,7 +115,6 @@ export default function Sidebar({
       >
         {/* Filter controls */}
         <div className="flex flex-col gap-1.5 p-2 border-border-strong border-b">
-          {/* Search */}
           <div className="flex flex-col gap-1">
             <span className="text-[11px] text-text-dim uppercase tracking-[.05em]">
               Search
@@ -144,7 +132,6 @@ export default function Sidebar({
             </div>
           </div>
 
-          {/* Year */}
           <div className="flex flex-col gap-1">
             <span className="text-[11px] text-text-dim uppercase tracking-[.05em]">
               Year
@@ -160,7 +147,6 @@ export default function Sidebar({
             />
           </div>
 
-          {/* Sort by */}
           <div className="flex flex-col gap-1">
             <span className="text-[11px] text-text-dim uppercase tracking-[.05em]">
               Sort by
@@ -177,10 +163,14 @@ export default function Sidebar({
           </div>
         </div>
 
-        {/* List header */}
+        {/* List header with count */}
         <div className="flex justify-between items-center px-2.5 py-1.5 border-border-default border-b shrink-0">
           <span className="text-text-dim text-xs">
-            {isFavorites ? "Favourites" : "All films"}
+            {isFavorites ? (
+              <>{favoriteCount} saved</>
+            ) : (
+              <>{movieCount} films</>
+            )}
           </span>
           <button
             onClick={handleReset}
@@ -191,12 +181,8 @@ export default function Sidebar({
           </button>
         </div>
 
-        {/* Route-aware list panel — each module owns its own list */}
-        {isFavorites ? (
-          <FavoritesSidebarList onSelect={onSelect} onClose={onClose} />
-        ) : (
-          <MoviesSidebarList onSelect={onSelect} onClose={onClose} />
-        )}
+        {/* Route-aware list panel */}
+        {isFavorites ? <FavoritesSidebarList /> : <MoviesSidebarList />}
       </aside>
     </>
   );

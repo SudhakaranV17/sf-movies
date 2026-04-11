@@ -1,5 +1,6 @@
-import BaseLayout from "@/layouts/baseLayout";
 import { createFileRoute } from "@tanstack/react-router";
+import BaseLayout from "@/layouts/baseLayout";
+import MoviesPage from "@/pages/movies/index.page";
 import { MovieSearchSchema } from "@/modules/movies/types/movies.type";
 
 export const Route = createFileRoute("/dashboard")({
@@ -8,5 +9,9 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function DashboardPage() {
-  return <BaseLayout />;
+  return (
+    <BaseLayout>
+      <MoviesPage />
+    </BaseLayout>
+  );
 }

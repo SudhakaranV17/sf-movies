@@ -4,6 +4,7 @@ import { PrimeReactProvider } from "primereact/api";
 import { Toaster } from "react-hot-toast";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
+import "leaflet/dist/leaflet.css";
 import "./index.css";
 import App from "./App.tsx";
 import QueryProvider from "./shared/providers/QueryProvider.tsx";

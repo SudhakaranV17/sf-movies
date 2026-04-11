@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 import bcrypt
+import asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi import HTTPException, status
@@ -21,17 +22,21 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
 
 # ─── Password ─────────────────────────────────────────────────────────────────
 
-def hash_password(password: str) -> str:
+async def hash_password(password: str) -> str:
     try:
-        return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+        return await asyncio.to_thread(
+            lambda: bcrypt.hashpw(password.encode(), bcrypt.gensalt(rounds=10)).decode()
+        )
     except Exception as e:
         logger.error(f"Error hashing password: {str(e)}")
         raise
 
 
-def verify_password(plain: str, hashed: str) -> bool:
+async def verify_password(plain: str, hashed: str) -> bool:
     try:
-        return bcrypt.checkpw(plain.encode(), hashed.encode())
+        return await asyncio.to_thread(
+            lambda: bcrypt.checkpw(plain.encode(), hashed.encode())
+        )
     except Exception as e:
         logger.error(f"Error verifying password: {str(e)}")
         return False
@@ -77,7 +82,7 @@ async def register_user(data: UserCreate, db: AsyncSession):
             logger.warning(f"Registration failed - Email already exists: {data.email}")
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
 
-        user = User(email=data.email, password=hash_password(data.password))
+        user = User(email=data.email, password=await hash_password(data.password))
         db.add(user)
         await db.commit()
         await db.refresh(user)
@@ -108,7 +113,7 @@ async def login_user(email: str, password: str, db: AsyncSession) -> str:
         result = await db.execute(select(User).where(User.email == email))
         user = result.scalar_one_or_none()
         
-        if not user or not verify_password(password, user.password):
+        if not user or not await verify_password(password, user.password):
             logger.warning(f"Login failed - invalid credentials for: {email}")
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 

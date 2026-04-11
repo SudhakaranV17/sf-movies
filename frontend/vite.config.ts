@@ -32,7 +32,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      port: 3000,
+      port: 3002,
       proxy: {
         "/api": {
           target: env.VITE_BASE_URL || "http://localhost:8080",
