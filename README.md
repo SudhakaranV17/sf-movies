@@ -6,7 +6,9 @@ A full-stack web application that lets users explore where movies were filmed in
 
 ## Live Demo
 
- [sf-movies-beta.vercel.app](https://sf-movies-beta.vercel.app/dashboard)
+🔗 [sf-movies-beta.vercel.app](https://sf-movies-beta.vercel.app/dashboard)
+
+> **⚠️ Note:** The backend is deployed on a free instance which spins down with inactivity. The first request after inactivity may take 50+ seconds to respond while the server wakes up. Subsequent requests will be fast.
 
 ---
 
