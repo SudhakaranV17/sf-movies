@@ -1,87 +1,212 @@
-# 🎬 SF Movies - Backend
+# SF Movies — Backend
 
-REST API backend for the SF Movies application built with FastAPI and PostgreSQL.
-
----
-
-## 🚀 Live Demo
-
-> Coming soon after deployment on Render
+FastAPI REST API for the SF Movies application. Syncs movie filming location data from the DataSF open dataset into PostgreSQL and exposes endpoints for movies, authentication, and favorites.
 
 ---
 
-## ✨ Features
+## Features
 
-- 🔐 User authentication with JWT tokens
-- 🎬 Fetch and cache SF movie filming locations from DataSF
-- 🔍 Search and filter movies
-- ❤️ Save and manage favorite filming locations
-- 📝 Auto-generated Swagger API docs
-- 🛡️ Password hashing with bcrypt
-- 🗄️ Database migrations with Alembic
-
----
-
-## 🛠️ Tech Stack
-
-| Category     | Technology        |
-| ------------ | ----------------- |
-| Framework    | FastAPI           |
-| Server       | Uvicorn           |
-| Database     | PostgreSQL        |
-| ORM          | SQLAlchemy        |
-| DB Connector | AsyncPG           |
-| Migrations   | Alembic           |
-| Auth         | JWT (python-jose) |
-| Password     | Passlib + Bcrypt  |
-| HTTP Client  | HTTPX             |
-| Validation   | Pydantic          |
-| Testing      | Pytest            |
+- Async FastAPI with full Swagger/ReDoc auto-documentation
+- On-startup sync of SF filming locations from the DataSF API
+- Full-text movie search (title, location, director, actors)
+- Decade-based year filtering and multiple sort options
+- JWT authentication (register, login) with bcrypt password hashing
+- Protected favorites endpoints (add, remove, list)
+- Async SQLAlchemy 2 + asyncpg for non-blocking DB access
+- Alembic for schema migrations
+- Request logging middleware with response time tracking
+- Pytest test suite covering auth, movies, and favorites
 
 ---
 
-## 📁 Folder Structure
+## Tech Stack
+
+| Category    | Technology              | Version |
+| ----------- | ----------------------- | ------- |
+| Framework   | FastAPI                 | 0.135   |
+| Server      | Uvicorn                 | 0.44    |
+| Database    | PostgreSQL              | 15+     |
+| ORM         | SQLAlchemy (async)      | 2.0     |
+| DB Driver   | asyncpg                 | 0.31    |
+| Migrations  | Alembic                 | 1.18    |
+| Auth        | python-jose (JWT)       | 3.5     |
+| Passwords   | Passlib + bcrypt        | 1.7 / 5 |
+| HTTP Client | HTTPX (async)           | 0.28    |
+| Validation  | Pydantic v2             | 2.12    |
+| Testing     | Pytest + pytest-asyncio | 9.0     |
+| Env         | python-dotenv           | 1.2     |
+
+---
+
+## Folder Structure
 
 ```
 backend/
-├── main.py                    → App entry point, middleware, routers
-├── database.py                → PostgreSQL connection setup
-├── .env                       → Secret keys, DB URL
-├── requirements.txt           → All packages
-├── alembic.ini                → Alembic config (auto generated)
+├── main.py                     → FastAPI app entry: CORS, middleware, routers, startup sync
+├── database.py                 → SQLAlchemy async engine, session factory, Base, get_db dependency
+├── logger.py                   → Structured logger factory
+├── requirements.txt
+├── alembic.ini                 → Alembic configuration
 │
-├── alembic/                   → DB migrations folder
-│   └── versions/              → Each migration file stored here
+├── alembic/
+│   ├── env.py                  → Alembic migration environment
+│   └── versions/
+│       └── caf5b3dcdefb_*.py   → Initial migration: users, movies, favorites tables
 │
-├── routers/                   → API endpoints (routes only, no logic)
-│   ├── auth.py                → /register, /login, /logout
-│   ├── movies.py              → /movies, /movies/search
-│   └── favorites.py           → /favorites GET, POST, DELETE
+├── models/                     → SQLAlchemy ORM models (table definitions)
+│   ├── __init__.py
+│   ├── user.py                 → User table (id, email unique, password, → favorites)
+│   ├── movie.py                → Movie table (full DataSF fields + lat/lng)
+│   └── favorite.py             → Favorite table (user_id FK, movie_id FK)
 │
-├── services/                  → Business logic
-│   ├── auth_service.py        → Password hash, token create
-│   ├── movie_service.py       → DataSF API fetch, filter logic
-│   └── favorite_service.py    → Add, remove, get favorites
+├── schemas/                    → Pydantic request/response models
+│   ├── __init__.py
+│   ├── user_schema.py          → UserCreate, UserResponse, LoginRequest, AuthResponse
+│   ├── movie_schema.py         → MovieResponse
+│   └── favorite_schema.py      → FavoriteCreate, FavoriteResponse
 │
-├── models/                    → Database table structure (SQLAlchemy)
-│   ├── user.py                → Users table
-│   ├── movie.py               → Movies table
-│   └── favorite.py            → Favorites table
+├── routers/                    → Thin route handlers — delegate all logic to services
+│   ├── __init__.py
+│   ├── auth.py                 → POST /auth/register, POST /auth/login, get_current_user dep
+│   ├── movies.py               → GET /movies, GET /movies/search
+│   └── favorites.py            → GET/POST/DELETE /favorites (JWT protected)
 │
-├── schemas/                   → Request & Response structure (Pydantic)
-│   ├── user_schema.py         → Login, Register request/response
-│   ├── movie_schema.py        → Movie response structure
-│   └── favorite_schema.py     → Favorite request/response
+├── services/                   → Business logic layer
+│   ├── __init__.py
+│   ├── auth_service.py         → hash_password, verify_password, create_access_token,
+│   │                              decode_access_token, register_user, login_user
+│   ├── movie_service.py        → fetch_all_movies_from_api (HTTPX), sync_movies,
+│   │                              get_all_movies, search_movies (year filter, sort, pagination)
+│   └── favorite_service.py     → add_favorite, remove_favorite, get_user_favorites
 │
-└── tests/                     → Unit tests
-    ├── test_auth.py
-    ├── test_movies.py
-    └── test_favorites.py
+└── tests/
+    ├── __init__.py
+    ├── conftest.py             → Pytest fixtures (test DB, test client, auth tokens)
+    ├── test_auth.py            → Register and login endpoint tests
+    ├── test_movies.py          → Movies list and search endpoint tests
+    └── test_favorites.py       → Add, remove, list favorites tests
 ```
 
 ---
 
-## ⚙️ Prerequisites
+## Database Schema
+
+```
+┌──────────────────────────────────────┐
+│ users                                │
+├──────────────────────────────────────┤
+│ id         INTEGER   PK AUTO         │
+│ email      VARCHAR   UNIQUE NOT NULL │
+│ password   VARCHAR   NOT NULL        │
+└───────────────────┬──────────────────┘
+                    │ 1
+                    │
+                    │ *
+┌───────────────────▼──────────────────┐
+│ favorites                            │
+├──────────────────────────────────────┤
+│ id         INTEGER   PK AUTO         │
+│ user_id    INTEGER   FK → users.id   │
+│ movie_id   INTEGER   FK → movies.id  │
+└───────────────────┬──────────────────┘
+                    │ *
+                    │
+                    │ 1
+┌───────────────────▼──────────────────┐
+│ movies                               │
+├──────────────────────────────────────┤
+│ id                   INTEGER   PK    │
+│ title                VARCHAR         │
+│ release_year         INTEGER         │
+│ locations            VARCHAR(500)    │
+│ fun_facts            VARCHAR(1000)   │
+│ production_company   VARCHAR         │
+│ distributor          VARCHAR         │
+│ director             VARCHAR         │
+│ writer               VARCHAR         │
+│ actor_1              VARCHAR         │
+│ actor_2              VARCHAR         │
+│ actor_3              VARCHAR         │
+│ latitude             FLOAT           │
+│ longitude            FLOAT           │
+│ analysis_neighborhood VARCHAR        │
+│ supervisor_district  VARCHAR         │
+└──────────────────────────────────────┘
+```
+
+---
+
+## API Endpoints
+
+Base URL: `http://localhost:8080`
+
+### Authentication
+
+| Method | Endpoint         | Auth | Request Body          | Response                             |
+| ------ | ---------------- | ---- | --------------------- | ------------------------------------ |
+| POST   | `/auth/register` | No   | `{ email, password }` | `{ access_token, token_type, user }` |
+| POST   | `/auth/login`    | No   | `{ email, password }` | `{ access_token, token_type, user }` |
+
+### Movies
+
+| Method | Endpoint         | Auth | Query Params        | Response          |
+| ------ | ---------------- | ---- | ------------------- | ----------------- |
+| GET    | `/movies`        | No   | `year`, `sort`      | `MovieResponse[]` |
+| GET    | `/movies/search` | No   | `q`, `year`, `sort` | `MovieResponse[]` |
+
+**Query param values:**
+
+- `year`: `1980s` `1990s` `2000s` `2010s` `2020s` `older`
+- `sort`: `title_asc` `title_desc` `year_asc` `year_desc`
+- `q`: free-text string searched across title, locations, director, actors
+
+### Favorites (requires `Authorization: Bearer <token>`)
+
+| Method | Endpoint                | Request Body   | Response             |
+| ------ | ----------------------- | -------------- | -------------------- |
+| GET    | `/favorites`            | —              | `FavoriteResponse[]` |
+| POST   | `/favorites`            | `{ movie_id }` | `FavoriteResponse`   |
+| DELETE | `/favorites/{movie_id}` | —              | `204 No Content`     |
+
+### Health
+
+| Method | Endpoint        | Response                                    |
+| ------ | --------------- | ------------------------------------------- |
+| GET    | `/health-check` | `{ "status": "running", "message": "..." }` |
+
+---
+
+## Application Startup Sequence
+
+1. `connect_db()` — establishes the SQLAlchemy async engine and verifies DB connectivity
+2. `sync_movies(db)` — fetches all records from the DataSF API (`DATASF_API_URL`) via HTTPX, upserts them into the `movies` table
+3. FastAPI begins serving requests
+
+This means the movies table is always up-to-date with the latest DataSF data on each deployment or restart.
+
+---
+
+## Authentication Flow
+
+```
+Client                          Server
+  │                               │
+  ├── POST /auth/register ──────► │  hash_password (bcrypt)
+  │   { email, password }         │  INSERT into users
+  │ ◄── { access_token, user } ── │  create_access_token (JWT, 30 min)
+  │                               │
+  ├── POST /auth/login ─────────► │  verify_password (bcrypt)
+  │   { email, password }         │  create_access_token
+  │ ◄── { access_token, user } ── │
+  │                               │
+  ├── GET /favorites ───────────► │  OAuth2PasswordBearer extracts token
+  │   Authorization: Bearer <tok> │  decode_access_token → user_id
+  │ ◄── [ FavoriteResponse ] ──── │  query favorites WHERE user_id = ?
+```
+
+---
+
+## Prerequisites
 
 - Python >= 3.11
 - PostgreSQL >= 15
@@ -89,153 +214,100 @@ backend/
 
 ---
 
-## 🔧 Setup & Installation
+## Setup & Installation
 
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/SudhakaranV17/sf-movies.git
-cd sf-movies/backend
-```
-
-### 2. Create virtual environment
+### 1. Create virtual environment
 
 ```bash
+cd backend
 python -m venv venv
 
-# Windows:
+# Windows
 venv\Scripts\activate
 
-# Mac/Linux:
+# Mac / Linux
 source venv/bin/activate
 ```
 
-### 3. Install dependencies
+### 2. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Create PostgreSQL database
+### 3. Create PostgreSQL database
 
 ```sql
-CREATE DATABASE sfmovies;
+CREATE DATABASE sf_movies;
 ```
 
-### 5. Configure environment variables
+### 4. Configure environment
 
-Create a `.env` file in the `backend/` folder:
+Create `backend/.env`:
 
 ```env
-DATABASE_URL=postgresql://username:password@localhost:5432/sfmovies
+DATABASE_URL=your_database_url_here
 SECRET_KEY=your_secret_key_here
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 DATASF_API_URL=https://data.sfgov.org/resource/yitu-d5am.json
 ```
 
-### 6. Run database migrations
+### 5. Run migrations
 
 ```bash
 alembic upgrade head
 ```
 
-### 7. Start the server
+### 6. Start the server
 
 ```bash
-uvicorn main:app --reload
+uvicorn main:app --reload --port 8080
 ```
 
-API runs at `http://localhost:8000`
+API runs at `http://localhost:8080`
 
 ---
 
-## 📜 API Documentation
-
-Once the server is running, visit:
+## API Documentation
 
 | URL                           | Description |
 | ----------------------------- | ----------- |
-| `http://localhost:8000/docs`  | Swagger UI  |
-| `http://localhost:8000/redoc` | ReDoc UI    |
+| `http://localhost:8080/docs`  | Swagger UI  |
+| `http://localhost:8080/redoc` | ReDoc UI    |
 
 ---
 
-## 🔗 API Endpoints
+## Environment Variables
 
-### Auth
-
-| Method | Endpoint             | Description       |
-| ------ | -------------------- | ----------------- |
-| POST   | `/api/auth/register` | Register new user |
-| POST   | `/api/auth/login`    | Login user        |
-| POST   | `/api/auth/logout`   | Logout user       |
-
-### Movies
-
-| Method | Endpoint                | Description    |
-| ------ | ----------------------- | -------------- |
-| GET    | `/api/movies`           | Get all movies |
-| GET    | `/api/movies/search?q=` | Search movies  |
-
-### Favorites
-
-| Method | Endpoint              | Description           |
-| ------ | --------------------- | --------------------- |
-| GET    | `/api/favorites`      | Get user favorites    |
-| POST   | `/api/favorites`      | Add to favorites      |
-| DELETE | `/api/favorites/{id}` | Remove from favorites |
+| Variable                      | Description                        |
+| ----------------------------- | ---------------------------------- |
+| `DATABASE_URL`                | Async PostgreSQL connection string |
+| `ALLOWED_HOST_URL`            | Cross origin allowed host url      |
+| `SECRET_KEY`                  | Secret for JWT signing             |
+| `ALGORITHM`                   | JWT algorithm (default: `HS256`)   |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Token TTL in minutes (default: 30) |
+| `DATASF_API_URL`              | DataSF film locations API endpoint |
 
 ---
 
-## 🔐 Environment Variables
-
-| Variable                      | Description               |
-| ----------------------------- | ------------------------- |
-| `DATABASE_URL`                | PostgreSQL connection URL |
-| `SECRET_KEY`                  | JWT secret key            |
-| `ALGORITHM`                   | JWT algorithm (HS256)     |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | Token expiry time         |
-| `DATASF_API_URL`              | DataSF movies dataset URL |
-
----
-
-## 🗄️ Database Schema
-
-```
-users
-├── id (PK)
-├── email (unique)
-├── password (hashed)
-└── created_at
-
-movies
-├── id (PK)
-├── title
-├── location
-├── lat
-├── lng
-├── year
-└── actor
-
-favorites
-├── id (PK)
-├── user_id (FK → users)
-├── movie_id (FK → movies)
-└── created_at
-```
-
----
-
-## 🧪 Running Tests
+## Running Tests
 
 ```bash
-pytest tests/
+pytest tests/ -v
 ```
+
+Test files:
+
+| File                      | Coverage                                         |
+| ------------------------- | ------------------------------------------------ |
+| `tests/test_auth.py`      | Register, login, duplicate user, bad credentials |
+| `tests/test_movies.py`    | List movies, search, year filter, sort           |
+| `tests/test_favorites.py` | Add, remove, list favorites; auth enforcement    |
 
 ---
 
-## 👨‍💻 Developer
+## Developer
 
 |              |                                                                           |
 | ------------ | ------------------------------------------------------------------------- |

@@ -6,7 +6,9 @@ from database import connect_db, AsyncSessionLocal
 from routers import auth, movies, favorites
 from services.movie_service import sync_movies
 from logger import get_logger
-
+from dotenv import load_dotenv
+import os
+load_dotenv()
 logger = get_logger(__name__)
 
 app = FastAPI(
@@ -31,7 +33,7 @@ async def log_requests(request: Request, call_next):
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[os.getenv("ALLOWED_HOST_URL")],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
